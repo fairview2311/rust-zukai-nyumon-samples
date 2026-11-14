@@ -102,11 +102,16 @@ fn run_and_save<S: Store>(
     Ok(lines)
 }
 
+fn db_path() -> String {
+    std::env::var("TODO_DB")
+        .unwrap_or_else(|_| "todos.db".to_string())
+}
+
 #[tokio::main]
 async fn main() {
     let cli = Cli::parse();
     if let Command::Serve = cli.command {
-        let store = SqliteStore::new("todos.db");
+        let store = SqliteStore::new(&db_path());
         web::serve(store).await;
         return;
     }
@@ -114,7 +119,7 @@ async fn main() {
         let store = JsonStore::new("todos.json");
         run_and_save(&store, cli.command)
     } else {
-        let store = SqliteStore::new("todos.db");
+        let store = SqliteStore::new(&db_path());
         run_and_save(&store, cli.command)
     };
     match result {

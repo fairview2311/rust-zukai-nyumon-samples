@@ -160,11 +160,15 @@ pub async fn serve(store: SqliteStore) {
         .route("/todos/{id}/done", post(done_todo))
         .route("/todos/{id}", delete(remove_todo))
         .with_state(state);
+    let address = std::env::var("TODO_ADDR")
+        .unwrap_or_else(|_| {
+            "127.0.0.1:3000".to_string()
+        });
     let listener =
-        tokio::net::TcpListener::bind("127.0.0.1:3000")
+        tokio::net::TcpListener::bind(&address)
             .await
-            .expect("3000 番のポートを使えない");
-    println!("http://127.0.0.1:3000 で待っています");
+            .expect("そのアドレスを使えない");
+    println!("http://{address} で待っています");
     axum::serve(listener, app)
         .await
         .expect("サーバーが止まった");

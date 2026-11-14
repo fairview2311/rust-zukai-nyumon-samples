@@ -1,8 +1,10 @@
 mod list;
+mod store;
 mod todo;
 
 use clap::{Parser, Subcommand};
 use list::{TodoError, TodoList};
+use store::{JsonStore, Store};
 
 #[derive(Parser)]
 #[command(about = "ToDo を管理するコマンド")]
@@ -57,7 +59,7 @@ fn run(
             Ok(vec![format!("削除: {id} 番")])
         }
         Command::Show { id } => match list.find(id) {
-            Some(todo) => Ok(vec![todo.format()]),
+            Some(todo) => Ok(vec![todo.to_string()]),
             None => Err(TodoError::NotFound(id)),
         },
         Command::Search { word } => {
@@ -79,19 +81,20 @@ fn run(
     }
 }
 
-fn run_and_save(
-    path: &str,
+fn run_and_save<S: Store>(
+    store: &S,
     command: Command,
 ) -> Result<Vec<String>, TodoError> {
-    let mut list = TodoList::load(path)?;
+    let mut list = store.load()?;
     let lines = run(&mut list, command)?;
-    list.save(path)?;
+    store.save(&list)?;
     Ok(lines)
 }
 
 fn main() {
     let cli = Cli::parse();
-    match run_and_save("todos.json", cli.command) {
+    let store = JsonStore::new("todos.json");
+    match run_and_save(&store, cli.command) {
         Ok(lines) => {
             for text in lines {
                 println!("{text}");

@@ -23,7 +23,7 @@ impl TodoError {
     }
 }
 
-fn file_error(text: String) -> TodoError {
+pub fn file_error(text: String) -> TodoError {
     TodoError::File(text)
 }
 
@@ -39,28 +39,6 @@ impl TodoList {
             todos: Vec::new(),
             next_id: 1,
         }
-    }
-
-    pub fn load(
-        path: &str,
-    ) -> Result<TodoList, TodoError> {
-        if !std::path::Path::new(path).exists() {
-            return Ok(TodoList::new());
-        }
-        let text = std::fs::read_to_string(path)
-            .map_err(|e| file_error(e.to_string()))?;
-        serde_json::from_str(&text)
-            .map_err(|e| file_error(e.to_string()))
-    }
-
-    pub fn save(
-        &self,
-        path: &str,
-    ) -> Result<(), TodoError> {
-        let text = serde_json::to_string_pretty(self)
-            .expect("JSON に変換できない");
-        std::fs::write(path, text)
-            .map_err(|e| file_error(e.to_string()))
     }
 
     pub fn add(

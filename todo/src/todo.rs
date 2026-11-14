@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::fmt;
 
 #[derive(Debug, Serialize, Deserialize)]
 enum Status {
@@ -68,4 +69,13 @@ fn clean_title(title: &str) -> String {
 
 pub fn is_too_long(title: &str) -> bool {
     title.chars().count() > 20
+}
+
+impl fmt::Display for Todo {
+    fn fmt(
+        &self,
+        f: &mut fmt::Formatter,
+    ) -> fmt::Result {
+        write!(f, "{}", self.format())
+    }
 }

@@ -1,3 +1,4 @@
 fn main() {
-    println!("Hello, world!");
+    let title = "牛乳を買う";
+    println!("ToDo: {title}");
 }

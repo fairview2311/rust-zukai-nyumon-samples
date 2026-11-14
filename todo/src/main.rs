@@ -50,6 +50,71 @@ impl Todo {
     fn set_memo(&mut self, memo: &str) {
         self.memo = Some(memo.to_string());
     }
+
+    fn is_open(&self) -> bool {
+        matches!(self.status, Status::Open)
+    }
+}
+
+struct TodoList {
+    todos: Vec<Todo>,
+    next_id: u32,
+}
+
+impl TodoList {
+    fn new() -> TodoList {
+        TodoList {
+            todos: Vec::new(),
+            next_id: 1,
+        }
+    }
+
+    fn add(&mut self, title: &str) -> u32 {
+        let id = self.next_id;
+        self.todos.push(Todo::new(id, title));
+        self.next_id += 1;
+        id
+    }
+
+    fn list(&self) -> Vec<String> {
+        self.todos
+            .iter()
+            .map(|todo| todo.format())
+            .collect()
+    }
+
+    fn find(&self, id: u32) -> Option<&Todo> {
+        self.todos.iter().find(|todo| todo.id == id)
+    }
+
+    fn find_mut(
+        &mut self,
+        id: u32,
+    ) -> Option<&mut Todo> {
+        self.todos.iter_mut().find(|todo| todo.id == id)
+    }
+
+    fn done(&mut self, id: u32) -> bool {
+        if let Some(todo) = self.find_mut(id) {
+            todo.complete();
+            true
+        } else {
+            false
+        }
+    }
+
+    fn remove(&mut self, id: u32) -> bool {
+        let before = self.todos.len();
+        self.todos.retain(|todo| todo.id != id);
+        self.todos.len() < before
+    }
+
+    fn count_open(&self) -> usize {
+        self.todos
+            .iter()
+            .filter(|todo| todo.is_open())
+            .count()
+    }
 }
 
 fn clean_title(title: &str) -> String {
@@ -61,20 +126,33 @@ fn is_too_long(title: &str) -> bool {
 }
 
 fn main() {
-    let mut todo = Todo::new(1, "  牛乳を買う  ");
-    let mut egg = Todo::new(2, "卵を買う");
-    let book = Todo::new(3, "本を返す");
-
-    if is_too_long(&todo.title) {
+    let mut list = TodoList::new();
+    let title = "  牛乳を買う  ";
+    if is_too_long(title) {
         println!("題名は20文字までです");
     }
-    todo.set_memo("2本");
-    todo.complete();
-    egg.postpone();
+    list.add(title);
+    let egg = list.add("卵を買う");
+    list.add("本を返す");
+    list.add("手紙を出す");
 
-    println!("{}", todo.format());
-    println!("{}", egg.format());
-    println!("{}", book.format());
-    println!("{:?}", book.memo);
-    println!("{:?}", todo.memo);
+    list.done(1);
+    if let Some(todo) = list.find_mut(1) {
+        todo.set_memo("2本");
+    }
+    if let Some(todo) = list.find_mut(3) {
+        todo.postpone();
+    }
+    list.remove(egg);
+    if !list.done(9) {
+        println!("9 番の ToDo はありません");
+    }
+    if let Some(todo) = list.find(4) {
+        println!("4 番: {}", todo.title);
+    }
+
+    for line in list.list() {
+        println!("{line}");
+    }
+    println!("未完了: {} 件", list.count_open());
 }

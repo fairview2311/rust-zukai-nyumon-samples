@@ -1,14 +1,27 @@
-fn format_todo(
+#[derive(Debug)]
+struct Todo {
     id: u32,
-    title: &str,
+    title: String,
     done: bool,
-) -> String {
-    let mark = if done { "x" } else { " " };
-    format!("[{mark}] {id}: {title}")
 }
 
-fn complete(done: &mut bool) {
-    *done = true;
+impl Todo {
+    fn new(id: u32, title: &str) -> Todo {
+        Todo {
+            id,
+            title: clean_title(title),
+            done: false,
+        }
+    }
+
+    fn format(&self) -> String {
+        let mark = if self.done { "x" } else { " " };
+        format!("[{mark}] {}: {}", self.id, self.title)
+    }
+
+    fn complete(&mut self) {
+        self.done = true;
+    }
 }
 
 fn clean_title(title: &str) -> String {
@@ -20,17 +33,16 @@ fn is_too_long(title: &str) -> bool {
 }
 
 fn main() {
-    let id = 1;
-    let input = String::from("  牛乳を買う  ");
-    let title = clean_title(&input);
-    let mut done = false;
+    let mut todo = Todo::new(1, "  牛乳を買う  ");
+    let egg = Todo::new(2, "卵を買う");
 
-    if is_too_long(&title) {
+    if is_too_long(&todo.title) {
         println!("題名は20文字までです");
     }
-    println!("{}", format_todo(id, &title, done));
+    println!("{}", todo.format());
 
-    complete(&mut done);
-    println!("{}", format_todo(id, &title, done));
-    println!("{}", format_todo(2, "卵を買う", false));
+    todo.complete();
+    println!("{}", todo.format());
+    println!("{}", egg.format());
+    println!("{todo:?}");
 }

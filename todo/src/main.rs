@@ -2,6 +2,7 @@ mod list;
 mod sqlite_store;
 mod store;
 mod todo;
+mod web;
 
 use clap::{Parser, Subcommand};
 use list::{TodoError, TodoList};
@@ -36,6 +37,8 @@ enum Command {
     List,
     /// 題名に語を含む ToDo を表示する
     Search { word: String },
+    /// Web の API を起動する
+    Serve,
 }
 
 fn run(
@@ -83,6 +86,9 @@ fn run(
             lines.push(format!("未完了: {open} 件"));
             Ok(lines)
         }
+        Command::Serve => {
+            unreachable!("serve は main で先に処理する")
+        }
     }
 }
 
@@ -96,8 +102,14 @@ fn run_and_save<S: Store>(
     Ok(lines)
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let cli = Cli::parse();
+    if let Command::Serve = cli.command {
+        let store = SqliteStore::new("todos.db");
+        web::serve(store).await;
+        return;
+    }
     let result = if cli.json {
         let store = JsonStore::new("todos.json");
         run_and_save(&store, cli.command)

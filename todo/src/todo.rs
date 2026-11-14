@@ -80,6 +80,7 @@ impl fmt::Display for Todo {
     }
 }
 
+#[derive(Serialize)]
 pub struct TodoRow {
     pub id: u32,
     pub title: String,

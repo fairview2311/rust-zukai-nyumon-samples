@@ -5,9 +5,9 @@ fn add_prints_new_id() {
     let dir =
         std::env::temp_dir().join("todo-cli-test");
     std::fs::create_dir_all(&dir).unwrap();
-    let json = dir.join("todos.json");
-    if json.exists() {
-        std::fs::remove_file(&json).unwrap();
+    let db = dir.join("todos.db");
+    if db.exists() {
+        std::fs::remove_file(&db).unwrap();
     }
     let output =
         Command::new(env!("CARGO_BIN_EXE_todo"))

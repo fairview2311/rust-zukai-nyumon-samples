@@ -1,14 +1,19 @@
 mod list;
+mod sqlite_store;
 mod store;
 mod todo;
 
 use clap::{Parser, Subcommand};
 use list::{TodoError, TodoList};
+use sqlite_store::SqliteStore;
 use store::{JsonStore, Store};
 
 #[derive(Parser)]
 #[command(about = "ToDo を管理するコマンド")]
 struct Cli {
+    /// JSON のファイル（todos.json）に保存する
+    #[arg(long)]
+    json: bool,
     #[command(subcommand)]
     command: Command,
 }
@@ -93,8 +98,14 @@ fn run_and_save<S: Store>(
 
 fn main() {
     let cli = Cli::parse();
-    let store = JsonStore::new("todos.json");
-    match run_and_save(&store, cli.command) {
+    let result = if cli.json {
+        let store = JsonStore::new("todos.json");
+        run_and_save(&store, cli.command)
+    } else {
+        let store = SqliteStore::new("todos.db");
+        run_and_save(&store, cli.command)
+    };
+    match result {
         Ok(lines) => {
             for text in lines {
                 println!("{text}");

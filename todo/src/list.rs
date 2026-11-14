@@ -1,4 +1,4 @@
-use crate::todo::{Todo, is_too_long};
+use crate::todo::{Todo, TodoRow, is_too_long};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug)]
@@ -108,6 +108,29 @@ impl TodoList {
             .iter()
             .filter(|todo| todo.is_open())
             .count()
+    }
+}
+
+impl TodoList {
+    pub fn to_rows(&self) -> Vec<TodoRow> {
+        self.todos
+            .iter()
+            .map(|todo| todo.to_row())
+            .collect()
+    }
+
+    pub fn from_rows(rows: Vec<TodoRow>) -> TodoList {
+        let next_id = rows
+            .iter()
+            .map(|row| row.id)
+            .max()
+            .unwrap_or(0)
+            + 1;
+        let todos = rows
+            .into_iter()
+            .map(Todo::from_row)
+            .collect();
+        TodoList { todos, next_id }
     }
 }
 

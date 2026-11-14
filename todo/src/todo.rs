@@ -79,3 +79,40 @@ impl fmt::Display for Todo {
         write!(f, "{}", self.format())
     }
 }
+
+pub struct TodoRow {
+    pub id: u32,
+    pub title: String,
+    pub status: String,
+    pub memo: Option<String>,
+}
+
+impl Todo {
+    pub fn to_row(&self) -> TodoRow {
+        let status = match self.status {
+            Status::Open => "open",
+            Status::Done => "done",
+            Status::Later => "later",
+        };
+        TodoRow {
+            id: self.id,
+            title: self.title.clone(),
+            status: status.to_string(),
+            memo: self.memo.clone(),
+        }
+    }
+
+    pub fn from_row(row: TodoRow) -> Todo {
+        let status = match row.status.as_str() {
+            "done" => Status::Done,
+            "later" => Status::Later,
+            _ => Status::Open,
+        };
+        Todo {
+            id: row.id,
+            title: row.title,
+            status,
+            memo: row.memo,
+        }
+    }
+}

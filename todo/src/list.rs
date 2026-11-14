@@ -1,6 +1,7 @@
 use crate::todo::{Todo, is_too_long};
 use serde::{Deserialize, Serialize};
 
+#[derive(Debug)]
 pub enum TodoError {
     TooLong,
     NotFound(u32),
@@ -107,5 +108,48 @@ impl TodoList {
             .iter()
             .filter(|todo| todo.is_open())
             .count()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn add_returns_new_id() {
+        let mut list = TodoList::new();
+        assert_eq!(list.add("牛乳を買う").unwrap(), 1);
+        assert_eq!(list.add("卵を買う").unwrap(), 2);
+    }
+
+    #[test]
+    fn add_rejects_long_title() {
+        let mut list = TodoList::new();
+        let title = "あ".repeat(21);
+        let result = list.add(&title);
+        assert!(matches!(
+            result,
+            Err(TodoError::TooLong)
+        ));
+    }
+
+    #[test]
+    fn done_reduces_open_count() {
+        let mut list = TodoList::new();
+        list.add("牛乳を買う").unwrap();
+        list.add("卵を買う").unwrap();
+        list.get_mut(1).unwrap().complete();
+        assert_eq!(list.count_open(), 1);
+    }
+
+    #[test]
+    fn todo_is_shown_with_display() {
+        let mut list = TodoList::new();
+        list.add("牛乳を買う").unwrap();
+        let todo = list.find(1).unwrap();
+        assert_eq!(
+            todo.to_string(),
+            "[ ] 1: 牛乳を買う"
+        );
     }
 }

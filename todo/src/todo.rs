@@ -53,6 +53,10 @@ impl Todo {
         self.memo = Some(memo.to_string());
     }
 
+    pub fn has_word(&self, word: &str) -> bool {
+        self.title.contains(word)
+    }
+
     pub fn is_open(&self) -> bool {
         matches!(self.status, Status::Open)
     }

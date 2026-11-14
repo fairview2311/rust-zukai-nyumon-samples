@@ -27,6 +27,8 @@ enum Command {
     Show { id: u32 },
     /// ToDo の一覧を表示する
     List,
+    /// 題名に語を含む ToDo を表示する
+    Search { word: String },
 }
 
 fn run(
@@ -58,6 +60,16 @@ fn run(
             Some(todo) => Ok(vec![todo.format()]),
             None => Err(TodoError::NotFound(id)),
         },
+        Command::Search { word } => {
+            let found = list.search(&word);
+            let mut lines: Vec<String> = found
+                .iter()
+                .map(|todo| todo.format())
+                .collect();
+            let count = found.len();
+            lines.push(format!("該当: {count} 件"));
+            Ok(lines)
+        }
         Command::List => {
             let mut lines = list.list();
             let open = list.count_open();

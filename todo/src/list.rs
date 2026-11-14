@@ -83,6 +83,13 @@ impl TodoList {
             .collect()
     }
 
+    pub fn search(&self, word: &str) -> Vec<&Todo> {
+        self.todos
+            .iter()
+            .filter(|todo| todo.has_word(word))
+            .collect()
+    }
+
     pub fn find(&self, id: u32) -> Option<&Todo> {
         self.todos.iter().find(|todo| todo.id == id)
     }

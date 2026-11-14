@@ -1,11 +1,13 @@
-#[derive(Debug)]
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Serialize, Deserialize)]
 enum Status {
     Open,
     Done,
     Later,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Todo {
     pub id: u32,
     title: String,

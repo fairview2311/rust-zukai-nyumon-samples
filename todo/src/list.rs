@@ -1,8 +1,10 @@
 use crate::todo::{Todo, is_too_long};
+use serde::{Deserialize, Serialize};
 
 pub enum TodoError {
     TooLong,
     NotFound(u32),
+    File(String),
 }
 
 impl TodoError {
@@ -14,10 +16,18 @@ impl TodoError {
             TodoError::NotFound(id) => {
                 format!("{id} 番はありません")
             }
+            TodoError::File(text) => {
+                format!("ファイルを使えません: {text}")
+            }
         }
     }
 }
 
+fn file_error(text: String) -> TodoError {
+    TodoError::File(text)
+}
+
+#[derive(Serialize, Deserialize)]
 pub struct TodoList {
     todos: Vec<Todo>,
     next_id: u32,
@@ -29,6 +39,28 @@ impl TodoList {
             todos: Vec::new(),
             next_id: 1,
         }
+    }
+
+    pub fn load(
+        path: &str,
+    ) -> Result<TodoList, TodoError> {
+        if !std::path::Path::new(path).exists() {
+            return Ok(TodoList::new());
+        }
+        let text = std::fs::read_to_string(path)
+            .map_err(|e| file_error(e.to_string()))?;
+        serde_json::from_str(&text)
+            .map_err(|e| file_error(e.to_string()))
+    }
+
+    pub fn save(
+        &self,
+        path: &str,
+    ) -> Result<(), TodoError> {
+        let text = serde_json::to_string_pretty(self)
+            .expect("JSON に変換できない");
+        std::fs::write(path, text)
+            .map_err(|e| file_error(e.to_string()))
     }
 
     pub fn add(

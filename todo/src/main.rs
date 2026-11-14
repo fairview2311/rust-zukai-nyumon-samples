@@ -67,10 +67,19 @@ fn run(
     }
 }
 
+fn run_and_save(
+    path: &str,
+    command: Command,
+) -> Result<Vec<String>, TodoError> {
+    let mut list = TodoList::load(path)?;
+    let lines = run(&mut list, command)?;
+    list.save(path)?;
+    Ok(lines)
+}
+
 fn main() {
     let cli = Cli::parse();
-    let mut list = TodoList::new();
-    match run(&mut list, cli.command) {
+    match run_and_save("todos.json", cli.command) {
         Ok(lines) => {
             for text in lines {
                 println!("{text}");

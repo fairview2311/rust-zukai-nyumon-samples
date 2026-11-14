@@ -2,8 +2,12 @@ use crate::list::TodoError;
 use crate::sqlite_store::SqliteStore;
 use crate::store::Store;
 use crate::todo::TodoRow;
+use askama::Template;
 use axum::extract::{Form, Path, State};
 use axum::http::StatusCode;
+use axum::response::{
+    Html, IntoResponse, Redirect, Response,
+};
 use axum::routing::{delete, get, post};
 use axum::{Json, Router};
 use serde::Deserialize;
@@ -74,11 +78,83 @@ async fn remove_todo(
     Ok(format!("削除: {id} 番"))
 }
 
+#[derive(Template)]
+#[template(path = "index.html")]
+struct IndexPage {
+    todos: Vec<TodoRow>,
+    error: String,
+}
+
+fn render_page(
+    store: &SqliteStore,
+    error: String,
+) -> Result<Html<String>, (StatusCode, String)> {
+    let list = store.load().map_err(api_error)?;
+    let page = IndexPage {
+        todos: list.to_rows(),
+        error,
+    };
+    let html = page.render().map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            e.to_string(),
+        )
+    })?;
+    Ok(Html(html))
+}
+
+async fn index(
+    State(state): State<Arc<AppState>>,
+) -> Result<Html<String>, (StatusCode, String)> {
+    let store = state.store.lock().unwrap();
+    render_page(&store, String::new())
+}
+
+async fn add_page(
+    State(state): State<Arc<AppState>>,
+    Form(new): Form<NewTodo>,
+) -> Result<Response, (StatusCode, String)> {
+    let store = state.store.lock().unwrap();
+    let mut list = store.load().map_err(api_error)?;
+    match list.add(&new.title) {
+        Ok(_) => {
+            store.save(&list).map_err(api_error)?;
+            Ok(Redirect::to("/").into_response())
+        }
+        Err(error) => {
+            let page =
+                render_page(&store, error.message())?;
+            Ok((StatusCode::BAD_REQUEST, page)
+                .into_response())
+        }
+    }
+}
+
+async fn done_page(
+    state: State<Arc<AppState>>,
+    id: Path<u32>,
+) -> Result<Redirect, (StatusCode, String)> {
+    done_todo(state, id).await?;
+    Ok(Redirect::to("/"))
+}
+
+async fn remove_page(
+    state: State<Arc<AppState>>,
+    id: Path<u32>,
+) -> Result<Redirect, (StatusCode, String)> {
+    remove_todo(state, id).await?;
+    Ok(Redirect::to("/"))
+}
+
 pub async fn serve(store: SqliteStore) {
     let state = Arc::new(AppState {
         store: Mutex::new(store),
     });
     let app = Router::new()
+        .route("/", get(index))
+        .route("/add", post(add_page))
+        .route("/done/{id}", post(done_page))
+        .route("/remove/{id}", post(remove_page))
         .route("/hello", get(hello))
         .route("/todos", get(list_todos).post(add_todo))
         .route("/todos/{id}/done", post(done_todo))
